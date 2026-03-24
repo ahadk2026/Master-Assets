@@ -1,0 +1,14 @@
+packages:
+  "framer-motion": "For premium page transitions and micro-interactions"
+  "recharts": "For beautiful dashboard data visualization"
+  "date-fns": "For elegant date formatting"
+  "jwt-decode": "For parsing standard JWT payloads securely"
+
+images:
+  - path: "artifacts/it-asset-mgmt/public/images/login-hero.png"
+    description: "Abstract 3D geometric network mesh in deep indigo and enterprise blue, sleek and professional lighting"
+    aspect_ratio: "16:9"
+
+notes:
+  - "The API intercepts native fetch to append the Bearer token automatically from localStorage"
+  - "Wouter is used for routing, ensuring <Link> components are not wrapping <a> tags"

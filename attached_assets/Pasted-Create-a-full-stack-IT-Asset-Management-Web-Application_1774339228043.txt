@@ -1,0 +1,287 @@
+Create a full-stack IT Asset Management Web Application with enterprise-level features. Do NOT modify existing UI design or layout, only extend functionality.
+
+---
+
+## CORE MODULES
+
+1. Asset Inventory Management:
+
+* Manage all IT assets (laptops, desktops, etc.)
+* Fields based on Excel:
+  SN, Description, Category, Sub-category, Asset Number, Owner, Employee ID, DOJ, Custodian, Department, Email, Assigned Date, Location, OS, RAM, ROM, OS Version, Serial Number, Make & Model, Supplier, Invoice, Warranty, Remarks
+* Status: Available / Assigned / In Service
+
+2. Employee Management:
+
+* Login using Employee ID
+* Optional password (hashed using bcrypt)
+* Track:
+
+  * failed_attempts
+  * is_locked
+  * locked_at
+  * is_active
+
+3. Login Security:
+
+* If failed login >= 3:
+
+  * Lock account
+  * Prevent login
+* Only Admin can unlock
+* Reset attempts on successful login
+
+---
+
+## ASSET ASSIGNMENT & ACKNOWLEDGMENT
+
+4. Asset Assignment:
+
+* Admin assigns assets to employees
+* Track assignment history
+
+5. Acknowledgment System:
+
+* Employee logs in → sees "My Assets"
+* Click "Acknowledge"
+* Store:
+  asset_id, employee_id, acknowledgment_date, status, remarks
+
+6. PDF Acknowledgment:
+
+* Generate PDF after acknowledgment
+* Include:
+
+  * Employee details
+  * Asset details
+  * Assigned date
+  * Declaration text
+  * Signature placeholder
+* Allow:
+
+  * Download
+  * Print
+* Store reference in database
+
+---
+
+## NOTIFICATION SYSTEM
+
+7. Notifications:
+
+* Table: user_id, title, message, type, is_read, created_at
+* Trigger:
+
+  * Asset assigned
+  * Pending acknowledgment
+  * Account locked
+  * Service updates
+* UI:
+
+  * Bell icon dropdown
+  * Mark as read
+* Optional email notifications
+
+---
+
+## SERVICE & EXPENSE MANAGEMENT
+
+8. Service Module:
+
+* Track repair/service history
+* Fields:
+  asset_id, service_date, vendor, cost, status, remarks
+
+9. Expense Tracking:
+
+* Service expenses
+* Reports for total cost
+
+---
+
+## APP LICENSE MANAGEMENT (NEW FEATURE)
+
+10. App Licenses Module (Separate Section):
+
+* Manage software licenses separately from hardware assets
+
+Fields:
+
+* License Name
+* License Key
+* Vendor
+* Purchase Date
+* Expiry Date
+* Number of Seats
+* Assigned Users
+* Status (Available / Assigned / Expired)
+
+Features:
+
+* Assign license to employees
+* Track available vs used licenses
+* Expiry alerts
+
+11. Separate Dashboard for App Licenses:
+
+* Total licenses
+* Assigned vs Available
+* Expired licenses
+* Vendor-wise distribution
+
+---
+
+## DASHBOARD (MAIN)
+
+12. Admin Dashboard:
+
+* Total assets
+* Assigned / Available / In Service
+* Department-wise assets
+* Location-wise assets
+* Warranty expiry alerts
+* Acknowledgment status (Pending vs Completed)
+* Service cost summary
+
+13. Filters:
+
+* Department
+* Location
+* Category
+* Status
+
+---
+
+## IMPORT / EXPORT
+
+14. Import:
+
+* Import data from:
+
+  * Excel (CSV/XLSX)
+  * Google Sheets API
+
+15. Export:
+
+* Export reports to:
+
+  * Excel
+  * PDF
+
+---
+
+## ADMIN CONTROL PANEL
+
+16. Admin Features:
+
+* View all users
+* Edit user details
+* Delete user (soft delete)
+* Unlock locked users
+* View login attempts
+* View acknowledgment reports
+
+---
+
+## API ENDPOINTS
+
+* POST /login
+* GET /my-assets
+* POST /assign-asset
+* POST /acknowledge-asset
+* GET /notifications
+* POST /mark-read
+* GET /admin/users
+* PUT /admin/unlock-user/:id
+* PUT /admin/edit-user/:id
+* DELETE /admin/delete-user/:id
+* POST /import-assets
+* GET /export-assets
+* POST /licenses
+* GET /licenses
+* POST /assign-license
+
+---
+
+## TECH STACK
+
+Frontend:
+
+* React
+* Tailwind CSS
+
+Backend:
+
+* Node.js (Express)
+
+Database:
+
+* PostgreSQL
+
+Libraries:
+
+* bcrypt (password hashing)
+* JWT (authentication)
+* PDFKit or Puppeteer (PDF generation)
+* Multer (file upload)
+* xlsx (Excel import/export)
+
+---
+
+## SECURITY
+
+* JWT authentication
+* Role-based access (Admin / Employee)
+* Protected routes
+* Password hashing
+* Account lock mechanism
+
+---
+
+## DEPLOYMENT INSTRUCTIONS (IMPORTANT)
+
+After generating the complete app, also provide step-by-step setup instructions:
+
+1. WINDOWS SETUP:
+
+* Install Node.js
+* Install PostgreSQL
+* Clone project
+* Install dependencies (npm install)
+* Setup .env file
+* Run backend and frontend
+* Access app in browser
+
+2. UBUNTU SETUP:
+
+* Install Node.js (apt or nvm)
+* Install PostgreSQL
+* Setup database
+* Clone project
+* Install dependencies
+* Run using pm2 or node
+* Setup reverse proxy (Nginx optional)
+
+3. DATABASE SETUP:
+
+* Provide SQL scripts for tables
+* Show how to run migrations
+
+4. ENV CONFIG:
+
+* JWT secret
+* DB connection string
+
+5. OPTIONAL:
+
+* Steps for hosting on Raspberry Pi
+
+---
+
+## FINAL REQUIREMENT
+
+* Do NOT change existing UI design
+* Only extend functionality
+* Provide full working code
+* Provide clean folder structure
+* Provide setup guide clearly for beginners

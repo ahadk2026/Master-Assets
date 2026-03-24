@@ -1,22 +1,40 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: IT Asset Management API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: assets
+    description: Asset management
+  - name: employees
+    description: Employee management
+  - name: assignments
+    description: Asset assignments
+  - name: acknowledgments
+    description: Asset acknowledgments
+  - name: notifications
+    description: Notification system
+  - name: services
+    description: Service/repair tracking
+  - name: licenses
+    description: Software license management
+  - name: admin
+    description: Admin control panel
+  - name: import-export
+    description: Import and export operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +42,807 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Employee login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "423":
+          description: Account locked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /my-assets:
+    get:
+      operationId: getMyAssets
+      tags: [assets]
+      summary: Get assets assigned to current employee
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: My assets list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetWithDetails"
+
+  /assets:
+    get:
+      operationId: getAssets
+      tags: [assets]
+      summary: Get all assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Available, Assigned, "In Service"]
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Assets list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetWithDetails"
+    post:
+      operationId: createAsset
+      tags: [assets]
+      summary: Create a new asset
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssetRequest"
+      responses:
+        "201":
+          description: Asset created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+
+  /assets/{id}:
+    get:
+      operationId: getAsset
+      tags: [assets]
+      summary: Get asset by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Asset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetWithDetails"
+    put:
+      operationId: updateAsset
+      tags: [assets]
+      summary: Update asset
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAssetRequest"
+      responses:
+        "200":
+          description: Asset updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Asset"
+    delete:
+      operationId: deleteAsset
+      tags: [assets]
+      summary: Delete asset
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Asset deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /assign-asset:
+    post:
+      operationId: assignAsset
+      tags: [assignments]
+      summary: Assign asset to employee
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignAssetRequest"
+      responses:
+        "200":
+          description: Asset assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Assignment"
+
+  /assignments:
+    get:
+      operationId: getAssignments
+      tags: [assignments]
+      summary: Get all assignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employeeId
+          in: query
+          schema:
+            type: integer
+        - name: assetId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Assignments list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssignmentWithDetails"
+
+  /assignments/{id}/return:
+    post:
+      operationId: returnAsset
+      tags: [assignments]
+      summary: Return an asset
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                remarks:
+                  type: string
+      responses:
+        "200":
+          description: Asset returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /acknowledge-asset:
+    post:
+      operationId: acknowledgeAsset
+      tags: [acknowledgments]
+      summary: Acknowledge asset receipt
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcknowledgeAssetRequest"
+      responses:
+        "200":
+          description: Acknowledgment recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Acknowledgment"
+
+  /acknowledgments:
+    get:
+      operationId: getAcknowledgments
+      tags: [acknowledgments]
+      summary: Get acknowledgments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: employeeId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Acknowledgments list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AcknowledgmentWithDetails"
+
+  /acknowledgments/{id}/pdf:
+    get:
+      operationId: getAcknowledgmentPdf
+      tags: [acknowledgments]
+      summary: Download PDF for acknowledgment
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [notifications]
+      summary: Get notifications for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Notifications list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/mark-read:
+    post:
+      operationId: markNotificationsRead
+      tags: [notifications]
+      summary: Mark notifications as read
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+              required:
+                - ids
+      responses:
+        "200":
+          description: Marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /services:
+    get:
+      operationId: getServices
+      tags: [services]
+      summary: Get all service records
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assetId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Service records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceRecord"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create service record
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceRequest"
+      responses:
+        "201":
+          description: Service record created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+
+  /services/{id}:
+    put:
+      operationId: updateService
+      tags: [services]
+      summary: Update service record
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceRequest"
+      responses:
+        "200":
+          description: Service record updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceRecord"
+
+  /licenses:
+    get:
+      operationId: getLicenses
+      tags: [licenses]
+      summary: Get all software licenses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Available, Assigned, Expired]
+      responses:
+        "200":
+          description: Licenses list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/License"
+    post:
+      operationId: createLicense
+      tags: [licenses]
+      summary: Create software license
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLicenseRequest"
+      responses:
+        "201":
+          description: License created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/License"
+
+  /licenses/{id}:
+    put:
+      operationId: updateLicense
+      tags: [licenses]
+      summary: Update license
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLicenseRequest"
+      responses:
+        "200":
+          description: License updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/License"
+    delete:
+      operationId: deleteLicense
+      tags: [licenses]
+      summary: Delete license
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: License deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /assign-license:
+    post:
+      operationId: assignLicense
+      tags: [licenses]
+      summary: Assign license to employee
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignLicenseRequest"
+      responses:
+        "200":
+          description: License assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicenseAssignment"
+
+  /license-assignments:
+    get:
+      operationId: getLicenseAssignments
+      tags: [licenses]
+      summary: Get license assignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: licenseId
+          in: query
+          schema:
+            type: integer
+        - name: employeeId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: License assignments list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LicenseAssignmentWithDetails"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [admin]
+      summary: Get dashboard statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardData"
+
+  /admin/users:
+    get:
+      operationId: getAdminUsers
+      tags: [admin]
+      summary: Get all users
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+
+  /admin/users/{id}:
+    put:
+      operationId: updateAdminUser
+      tags: [admin]
+      summary: Edit user details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+    delete:
+      operationId: deleteAdminUser
+      tags: [admin]
+      summary: Soft delete user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/users/{id}/unlock:
+    put:
+      operationId: unlockAdminUser
+      tags: [admin]
+      summary: Unlock locked user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User unlocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/users/{id}/create:
+    post:
+      operationId: createAdminUser
+      tags: [admin]
+      summary: Create new employee
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeRequest"
+      responses:
+        "201":
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /employees:
+    get:
+      operationId: getEmployees
+      tags: [employees]
+      summary: Get all employees
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Employees list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Create employee
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeRequest"
+      responses:
+        "201":
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /import-assets:
+    post:
+      operationId: importAssets
+      tags: [import-export]
+      summary: Import assets from CSV/XLSX
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /export-assets:
+    get:
+      operationId: exportAssets
+      tags: [import-export]
+      summary: Export assets to Excel
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [xlsx, csv]
+            default: xlsx
+      responses:
+        "200":
+          description: Export file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +852,700 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    LoginRequest:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        password:
+          type: string
+      required:
+        - employeeId
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        employee:
+          $ref: "#/components/schemas/Employee"
+      required:
+        - token
+        - employee
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        role:
+          type: string
+          enum: [admin, employee]
+        isActive:
+          type: boolean
+        isLocked:
+          type: boolean
+        failedAttempts:
+          type: integer
+        lockedAt:
+          type: string
+          format: date-time
+        doj:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - employeeId
+        - name
+        - role
+        - isActive
+        - isLocked
+        - failedAttempts
+
+    CreateEmployeeRequest:
+      type: object
+      properties:
+        employeeId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [admin, employee]
+        doj:
+          type: string
+      required:
+        - employeeId
+        - name
+        - role
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        role:
+          type: string
+          enum: [admin, employee]
+        isActive:
+          type: boolean
+        password:
+          type: string
+
+    Asset:
+      type: object
+      properties:
+        id:
+          type: integer
+        sn:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        subCategory:
+          type: string
+        assetNumber:
+          type: string
+        owner:
+          type: string
+        employeeId:
+          type: string
+        custodian:
+          type: string
+        department:
+          type: string
+        email:
+          type: string
+        assignedDate:
+          type: string
+        location:
+          type: string
+        os:
+          type: string
+        ram:
+          type: string
+        rom:
+          type: string
+        osVersion:
+          type: string
+        serialNumber:
+          type: string
+        makeModel:
+          type: string
+        supplier:
+          type: string
+        invoice:
+          type: string
+        warranty:
+          type: string
+        status:
+          type: string
+          enum: [Available, Assigned, "In Service"]
+        remarks:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - assetNumber
+        - status
+
+    AssetWithDetails:
+      allOf:
+        - $ref: "#/components/schemas/Asset"
+        - type: object
+          properties:
+            assignedEmployee:
+              $ref: "#/components/schemas/Employee"
+            pendingAcknowledgment:
+              type: boolean
+
+    CreateAssetRequest:
+      type: object
+      properties:
+        sn:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        subCategory:
+          type: string
+        assetNumber:
+          type: string
+        owner:
+          type: string
+        employeeId:
+          type: string
+        custodian:
+          type: string
+        department:
+          type: string
+        email:
+          type: string
+        assignedDate:
+          type: string
+        location:
+          type: string
+        os:
+          type: string
+        ram:
+          type: string
+        rom:
+          type: string
+        osVersion:
+          type: string
+        serialNumber:
+          type: string
+        makeModel:
+          type: string
+        supplier:
+          type: string
+        invoice:
+          type: string
+        warranty:
+          type: string
+        status:
+          type: string
+          enum: [Available, Assigned, "In Service"]
+        remarks:
+          type: string
+      required:
+        - assetNumber
+
+    UpdateAssetRequest:
+      type: object
+      properties:
+        sn:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        subCategory:
+          type: string
+        assetNumber:
+          type: string
+        owner:
+          type: string
+        employeeId:
+          type: string
+        custodian:
+          type: string
+        department:
+          type: string
+        email:
+          type: string
+        assignedDate:
+          type: string
+        location:
+          type: string
+        os:
+          type: string
+        ram:
+          type: string
+        rom:
+          type: string
+        osVersion:
+          type: string
+        serialNumber:
+          type: string
+        makeModel:
+          type: string
+        supplier:
+          type: string
+        invoice:
+          type: string
+        warranty:
+          type: string
+        status:
+          type: string
+          enum: [Available, Assigned, "In Service"]
+        remarks:
+          type: string
+
+    Assignment:
+      type: object
+      properties:
+        id:
+          type: integer
+        assetId:
+          type: integer
+        employeeId:
+          type: integer
+        assignedDate:
+          type: string
+        returnedDate:
+          type: string
+        remarks:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - assetId
+        - employeeId
+        - isActive
+
+    AssignmentWithDetails:
+      allOf:
+        - $ref: "#/components/schemas/Assignment"
+        - type: object
+          properties:
+            asset:
+              $ref: "#/components/schemas/Asset"
+            employee:
+              $ref: "#/components/schemas/Employee"
+
+    AssignAssetRequest:
+      type: object
+      properties:
+        assetId:
+          type: integer
+        employeeId:
+          type: integer
+        assignedDate:
+          type: string
+        remarks:
+          type: string
+      required:
+        - assetId
+        - employeeId
+
+    Acknowledgment:
+      type: object
+      properties:
+        id:
+          type: integer
+        assetId:
+          type: integer
+        employeeId:
+          type: integer
+        assignmentId:
+          type: integer
+        acknowledgmentDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+        remarks:
+          type: string
+        pdfReference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - assetId
+        - employeeId
+        - status
+
+    AcknowledgmentWithDetails:
+      allOf:
+        - $ref: "#/components/schemas/Acknowledgment"
+        - type: object
+          properties:
+            asset:
+              $ref: "#/components/schemas/Asset"
+            employee:
+              $ref: "#/components/schemas/Employee"
+
+    AcknowledgeAssetRequest:
+      type: object
+      properties:
+        assetId:
+          type: integer
+        assignmentId:
+          type: integer
+        remarks:
+          type: string
+      required:
+        - assetId
+        - assignmentId
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - title
+        - message
+        - type
+        - isRead
+
+    ServiceRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        assetId:
+          type: integer
+        serviceDate:
+          type: string
+        vendor:
+          type: string
+        cost:
+          type: number
+        status:
+          type: string
+          enum: [Pending, "In Progress", Completed, Cancelled]
+        remarks:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        asset:
+          $ref: "#/components/schemas/Asset"
+      required:
+        - id
+        - assetId
+        - status
+
+    CreateServiceRequest:
+      type: object
+      properties:
+        assetId:
+          type: integer
+        serviceDate:
+          type: string
+        vendor:
+          type: string
+        cost:
+          type: number
+        status:
+          type: string
+          enum: [Pending, "In Progress", Completed, Cancelled]
+        remarks:
+          type: string
+      required:
+        - assetId
+        - status
+
+    UpdateServiceRequest:
+      type: object
+      properties:
+        serviceDate:
+          type: string
+        vendor:
+          type: string
+        cost:
+          type: number
+        status:
+          type: string
+          enum: [Pending, "In Progress", Completed, Cancelled]
+        remarks:
+          type: string
+
+    License:
+      type: object
+      properties:
+        id:
+          type: integer
+        licenseName:
+          type: string
+        licenseKey:
+          type: string
+        vendor:
+          type: string
+        purchaseDate:
+          type: string
+        expiryDate:
+          type: string
+        totalSeats:
+          type: integer
+        usedSeats:
+          type: integer
+        status:
+          type: string
+          enum: [Available, Assigned, Expired]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - licenseName
+        - totalSeats
+        - usedSeats
+        - status
+
+    CreateLicenseRequest:
+      type: object
+      properties:
+        licenseName:
+          type: string
+        licenseKey:
+          type: string
+        vendor:
+          type: string
+        purchaseDate:
+          type: string
+        expiryDate:
+          type: string
+        totalSeats:
+          type: integer
+        status:
+          type: string
+          enum: [Available, Assigned, Expired]
+      required:
+        - licenseName
+        - totalSeats
+
+    UpdateLicenseRequest:
+      type: object
+      properties:
+        licenseName:
+          type: string
+        licenseKey:
+          type: string
+        vendor:
+          type: string
+        purchaseDate:
+          type: string
+        expiryDate:
+          type: string
+        totalSeats:
+          type: integer
+        status:
+          type: string
+          enum: [Available, Assigned, Expired]
+
+    LicenseAssignment:
+      type: object
+      properties:
+        id:
+          type: integer
+        licenseId:
+          type: integer
+        employeeId:
+          type: integer
+        assignedDate:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - licenseId
+        - employeeId
+        - isActive
+
+    LicenseAssignmentWithDetails:
+      allOf:
+        - $ref: "#/components/schemas/LicenseAssignment"
+        - type: object
+          properties:
+            license:
+              $ref: "#/components/schemas/License"
+            employee:
+              $ref: "#/components/schemas/Employee"
+
+    AssignLicenseRequest:
+      type: object
+      properties:
+        licenseId:
+          type: integer
+        employeeId:
+          type: integer
+        assignedDate:
+          type: string
+      required:
+        - licenseId
+        - employeeId
+
+    DashboardData:
+      type: object
+      properties:
+        totalAssets:
+          type: integer
+        assignedAssets:
+          type: integer
+        availableAssets:
+          type: integer
+        inServiceAssets:
+          type: integer
+        totalEmployees:
+          type: integer
+        pendingAcknowledgments:
+          type: integer
+        completedAcknowledgments:
+          type: integer
+        warrantyExpiringAssets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Asset"
+        departmentStats:
+          type: array
+          items:
+            type: object
+            properties:
+              department:
+                type: string
+              count:
+                type: integer
+            required:
+              - department
+              - count
+        locationStats:
+          type: array
+          items:
+            type: object
+            properties:
+              location:
+                type: string
+              count:
+                type: integer
+            required:
+              - location
+              - count
+        categoryStats:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              count:
+                type: integer
+            required:
+              - category
+              - count
+        totalServiceCost:
+          type: number
+        totalLicenses:
+          type: integer
+        assignedLicenses:
+          type: integer
+        availableLicenses:
+          type: integer
+        expiredLicenses:
+          type: integer
+      required:
+        - totalAssets
+        - assignedAssets
+        - availableAssets
+        - inServiceAssets
+        - totalEmployees
+        - pendingAcknowledgments
+        - completedAcknowledgments
+
+    ImportResult:
+      type: object
+      properties:
+        imported:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - imported
+        - skipped
