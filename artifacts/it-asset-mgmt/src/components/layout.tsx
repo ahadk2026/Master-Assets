@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useGetNotifications, useMarkNotificationsRead, getGetNotificationsQueryKey } from "@workspace/api-client-react";
-import { 
-  LayoutDashboard, Monitor, Users, ClipboardList, 
-  FileCheck, Wrench, Key, ShieldAlert, LogOut, Bell, 
+import {
+  LayoutDashboard, Monitor, Users, ClipboardList,
+  FileCheck, Wrench, Key, Settings, LogOut, Bell,
   MonitorSmartphone
 } from "lucide-react";
 import { Button } from "./ui/button";
@@ -12,10 +13,32 @@ import { Badge } from "./ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 
+type AppSettings = { app_name?: string; app_subtitle?: string; app_logo_url?: string | null };
+
+function useAppSettings() {
+  const [settings, setSettings] = useState<AppSettings>({ app_name: "IT Asset", app_subtitle: "Management Hub" });
+
+  const load = () => {
+    fetch("/api/settings")
+      .then(r => (r.ok ? r.json() : null))
+      .then((d: AppSettings | null) => { if (d) setSettings(d); })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    load();
+    window.addEventListener("settings-updated", load);
+    return () => window.removeEventListener("settings-updated", load);
+  }, []);
+
+  return settings;
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
   const queryClient = useQueryClient();
+  const appSettings = useAppSettings();
 
   const { data: notifications } = useGetNotifications({
     query: { refetchInterval: 30000, enabled: !!user },
@@ -36,7 +59,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/acknowledgments", label: "Acknowledgments", icon: FileCheck },
     { href: "/services", label: "Services", icon: Wrench },
     { href: "/licenses", label: "Licenses", icon: Key },
-    { href: "/admin-panel", label: "Admin Panel", icon: ShieldAlert },
+    { href: "/admin-panel", label: "Settings", icon: Settings },
   ];
 
   const employeeNav = [
@@ -45,18 +68,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navItems = user?.role === "admin" ? adminNav : employeeNav;
 
+  const appName = appSettings.app_name || "IT Asset";
+  const appSubtitle = appSettings.app_subtitle || "Management Hub";
+  const logoUrl = appSettings.app_logo_url ? `/api${appSettings.app_logo_url}` : null;
+
+  const pageLabel = location.replace("/", "").replace(/-/g, " ") || "Dashboard";
+
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
-      {/* Dark Premium Sidebar */}
+      {/* Sidebar */}
       <aside className="w-64 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex flex-col flex-shrink-0 z-20 shadow-2xl shadow-black/20">
         <div className="h-20 flex items-center px-6 border-b border-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
-              <Monitor className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden flex-shrink-0">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
+              ) : (
+                <Monitor className="w-5 h-5 text-white" />
+              )}
             </div>
-            <div>
-              <h1 className="font-display font-bold text-white text-lg leading-tight tracking-wide">IT Asset</h1>
-              <p className="text-xs text-sidebar-foreground/60 font-medium">Management Hub</p>
+            <div className="min-w-0">
+              <h1 className="font-display font-bold text-white text-base leading-tight tracking-wide truncate">{appName}</h1>
+              <p className="text-xs text-sidebar-foreground/60 font-medium truncate">{appSubtitle}</p>
             </div>
           </div>
         </div>
@@ -68,8 +101,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link key={item.href} href={item.href} className="block">
                 <div
                   className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden
-                    ${isActive 
-                      ? "bg-primary/10 text-primary font-semibold" 
+                    ${isActive
+                      ? "bg-primary/10 text-primary font-semibold"
                       : "text-sidebar-foreground/70 hover:bg-white/5 hover:text-white font-medium"}`}
                 >
                   {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />}
@@ -83,7 +116,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="p-4 border-t border-white/5 bg-black/10">
           <div className="flex items-center gap-3 px-2 py-2">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30 flex-shrink-0">
               <span className="font-display font-bold text-primary">{user?.name?.charAt(0) || "U"}</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -94,13 +127,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden bg-slate-50/50">
         <header className="h-20 bg-card border-b border-border/60 flex items-center justify-between px-8 flex-shrink-0 z-10 shadow-sm shadow-black/5">
           <h2 className="font-display text-2xl font-semibold text-foreground tracking-tight capitalize">
-            {location.replace("/", "").replace("-", " ") || "Dashboard"}
+            {pageLabel}
           </h2>
-          
+
           <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -129,10 +162,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <div className="px-4 py-6 text-center text-sm text-muted-foreground">No notifications</div>
                   ) : (
                     notifications?.map((n) => (
-                      <div key={n.id} className={`px-4 py-3 rounded-lg mb-1 ${n.isRead ? 'opacity-60' : 'bg-primary/5'}`}>
-                        <p className="font-semibold text-sm">{n.title}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{n.message}</p>
-                      </div>
+                      <DropdownMenuItem key={n.id} className={`px-4 py-3 rounded-lg mb-1 cursor-default ${n.isRead ? 'opacity-60' : 'bg-primary/5'}`}>
+                        <div>
+                          <p className="font-semibold text-sm">{n.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{n.message}</p>
+                        </div>
+                      </DropdownMenuItem>
                     ))
                   )}
                 </div>

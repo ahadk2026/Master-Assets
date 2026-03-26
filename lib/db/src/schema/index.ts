@@ -5,3 +5,4 @@ export * from "./acknowledgments";
 export * from "./notifications";
 export * from "./services";
 export * from "./licenses";
+export * from "./settings";

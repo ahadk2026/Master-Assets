@@ -9,6 +9,7 @@ import licensesRouter from "./licenses.js";
 import employeesRouter from "./employees.js";
 import dashboardRouter from "./dashboard.js";
 import importExportRouter from "./importexport.js";
+import settingsRouter from "./settings.js";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(licensesRouter);
 router.use(employeesRouter);
 router.use(dashboardRouter);
 router.use(importExportRouter);
+router.use(settingsRouter);
 
 export default router;
