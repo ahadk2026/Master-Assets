@@ -30,11 +30,11 @@ const ASSET_FIELDS: FormField[] = [
 
 export default function Assets() {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<any>("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: assets, isLoading } = useGetAssets({ search, status: statusFilter || undefined });
+  const { data: assets, isLoading } = useGetAssets({ search, status: statusFilter !== "all" ? statusFilter : undefined });
   const { data: employees } = useGetEmployees();
   
   const { mutateAsync: create } = useCreateAsset();
@@ -104,7 +104,7 @@ export default function Assets() {
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="Available">Available</SelectItem>
               <SelectItem value="Assigned">Assigned</SelectItem>
               <SelectItem value="In Service">In Service</SelectItem>

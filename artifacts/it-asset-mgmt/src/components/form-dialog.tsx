@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +32,12 @@ export function FormDialog({ title, trigger, fields, initialData = {}, onSubmit,
   const [formData, setFormData] = useState<any>(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const initialDataRef = useRef(initialData);
+  initialDataRef.current = initialData;
+
   useEffect(() => {
-    if (open) setFormData(initialData);
-  }, [open, initialData]);
+    if (open) setFormData(initialDataRef.current);
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
